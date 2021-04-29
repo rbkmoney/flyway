@@ -19,6 +19,7 @@ import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.*;
 import org.flywaydb.core.api.callback.Callback;
 import org.flywaydb.core.api.migration.JavaMigration;
+import org.flywaydb.core.api.pattern.ValidatePattern;
 import org.flywaydb.core.api.resolver.MigrationResolver;
 import org.flywaydb.core.internal.configuration.ConfigUtils;
 import org.flywaydb.core.internal.util.ClassUtils;
@@ -165,6 +166,11 @@ public class FluentConfiguration implements Configuration {
     }
 
     @Override
+    public ValidatePattern[] getIgnoreMigrationPatterns() {
+        return config.getIgnoreMigrationPatterns();
+    }
+
+    @Override
     public boolean isValidateMigrationNaming() { return config.isValidateMigrationNaming(); }
 
     @Override
@@ -195,6 +201,16 @@ public class FluentConfiguration implements Configuration {
     @Override
     public boolean isBaselineOnMigrate() {
         return config.isBaselineOnMigrate();
+    }
+
+    @Override
+    public String getClickhouseClusterName() {
+        return config.getClickhouseClusterName();
+    }
+
+    @Override
+    public String getZookeeperUrl() {
+        return config.getZookeeperUrl();
     }
 
     @Override
@@ -526,6 +542,18 @@ public class FluentConfiguration implements Configuration {
     }
 
     /**
+     * Ignore migrations that match this comma-separated list of patterns when validating migrations.
+     * Each pattern is of the form <migration_type>:<migration_state>
+     * See https://flywaydb.org/documentation/configuration/parameters/ignoreMigrationPatterns for full details
+     * Example: repeatable:missing,versioned:pending,*:failed
+     * <i>Flyway Teams only</i>
+     */
+    public FluentConfiguration ignoreMigrationPatterns(String... ignoreMigrationPatterns) {
+        config.setIgnoreMigrationPatterns(ignoreMigrationPatterns);
+        return this;
+    }
+
+    /**
      * Whether to validate migrations and callbacks whose scripts do not obey the correct naming convention. A failure can be
      * useful to check that errors such as case sensitivity in migration prefixes have been corrected.
      *
@@ -675,7 +703,7 @@ public class FluentConfiguration implements Configuration {
      * If not specified, Flyway uses the default tablespace for the database connection.
      * This setting is only relevant for databases that do support the notion of tablespaces. Its value is simply ignored for all others.
      *
-     * @param tablespace The tablespace where to create the schema history table that will be used by Flyway. 
+     * @param tablespace The tablespace where to create the schema history table that will be used by Flyway.
      */
     public FluentConfiguration tablespace(String tablespace) {
         config.setTablespace(tablespace);
@@ -684,7 +712,7 @@ public class FluentConfiguration implements Configuration {
 
     /**
      * Sets the target version up to which Flyway should consider migrations.
-     * Migrations with a higher version number will be ignored. 
+     * Migrations with a higher version number will be ignored.
      * Special values:
      * <ul>
      * <li>{@code current}: designates the current version of the schema</li>
@@ -699,7 +727,7 @@ public class FluentConfiguration implements Configuration {
 
     /**
      * Sets the target version up to which Flyway should consider migrations.
-     * Migrations with a higher version number will be ignored. 
+     * Migrations with a higher version number will be ignored.
      * Special values:
      * <ul>
      * <li>{@code current}: designates the current version of the schema</li>
@@ -1134,7 +1162,7 @@ public class FluentConfiguration implements Configuration {
 
     /**
      * Your Flyway license key (FL01...). Not yet a Flyway Teams Edition customer?
-     * Request your <a href="https://flywaydb.org/download">Flyway trial license key</a>
+     * Request your <a href="https://flywaydb.org/try-flyway-teams-edition">Flyway trial license key</a>
      * to try out Flyway Teams Edition features free for 30 days.
      *
      * <i>Flyway Teams only</i>

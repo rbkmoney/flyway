@@ -63,8 +63,11 @@ public class SQLServerParser extends Parser {
 
     @Override
     protected Boolean detectCanExecuteInTransaction(String simplifiedStatement, List<Token> keywords) {
-        String current = keywords.get(keywords.size() - 1).getText();
-        if ("BACKUP".equals(current) || "RESTORE".equals(current) || "RECONFIGURE".equals(current)) {
+        Token currentToken = keywords.get(keywords.size() - 1);
+        String current = currentToken.getText();
+
+        if (currentToken.getType() != TokenType.IDENTIFIER &&
+                ("BACKUP".equals(current) || "RESTORE".equals(current) || "RECONFIGURE".equals(current))) {
             return false;
         }
 
@@ -88,7 +91,7 @@ public class SQLServerParser extends Parser {
     }
 
     @Override
-    protected boolean shouldAdjustBlockDepth(ParserContext context, Token token) {
+    protected boolean shouldAdjustBlockDepth(ParserContext context, List<Token> tokens, Token token) {
         TokenType tokenType = token.getType();
         if (TokenType.DELIMITER.equals(tokenType) || ";".equals(token.getText())) {
             return true;
@@ -96,7 +99,7 @@ public class SQLServerParser extends Parser {
             return true;
         }
 
-        return super.shouldAdjustBlockDepth(context, token);
+        return super.shouldAdjustBlockDepth(context, tokens, token);
     }
 
     @Override
@@ -108,15 +111,37 @@ public class SQLServerParser extends Parser {
         }
 
         if (context.getBlockDepth() > 0 && ("END".equals(keywordText) ||
-                TRANSACTION_REGEX.matcher(keywordText).matches() && lastTokenIs(tokens, keyword.getParensDepth(), "BEGIN"))) {
+                isTransaction(tokens, keyword, keywordText) ||
+                isDistributedTransaction(tokens, keyword, keywordText))) {
             context.decreaseBlockDepth();
         }
 
         super.adjustBlockDepth(context, tokens, keyword, reader);
     }
 
+    private boolean isTransaction(List<Token> tokens, Token keyword, String keywordText) {
+        return TRANSACTION_REGEX.matcher(keywordText).matches() &&
+                lastTokenIs(tokens, keyword.getParensDepth(), "BEGIN");
+    }
+
+    private boolean isDistributedTransaction(List<Token> tokens, Token keyword, String keywordText) {
+        return TRANSACTION_REGEX.matcher(keywordText).matches() &&
+                lastTokenIs(tokens, keyword.getParensDepth(), "DISTRIBUTED") &&
+                tokenAtIndexIs(tokens, tokens.size() - 2, "BEGIN");
+    }
+
     @Override
     protected int getTransactionalDetectionCutoff() {
         return Integer.MAX_VALUE;
+    }
+
+    @Override
+    protected char getOpeningIdentifierSymbol() {
+        return '[';
+    }
+
+    @Override
+    protected char getClosingIdentifierSymbol() {
+        return ']';
     }
 }

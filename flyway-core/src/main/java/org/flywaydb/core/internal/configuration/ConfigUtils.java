@@ -55,6 +55,7 @@ public class ConfigUtils {
     public static final String IGNORE_MISSING_MIGRATIONS = "flyway.ignoreMissingMigrations";
     public static final String IGNORE_IGNORED_MIGRATIONS = "flyway.ignoreIgnoredMigrations";
     public static final String IGNORE_PENDING_MIGRATIONS = "flyway.ignorePendingMigrations";
+    public static final String IGNORE_MIGRATION_PATTERNS = "flyway.ignoreMigrationPatterns";
     public static final String INIT_SQL = "flyway.initSql";
     public static final String INSTALLED_BY = "flyway.installedBy";
     public static final String LICENSE_KEY = "flyway.licenseKey";
@@ -100,6 +101,10 @@ public class ConfigUtils {
     public static final String ORACLE_SQLPLUS_WARN = "flyway.oracle.sqlplusWarn";
     public static final String ORACLE_KERBEROS_CONFIG_FILE = "flyway.oracle.kerberosConfigFile";
     public static final String ORACLE_KERBEROS_CACHE_FILE = "flyway.oracle.kerberosCacheFile";
+
+    // Clickhouse specific
+    public static final String CLICKHOUSE_CLUSTER_NAME = "flyway.clickhouse.clusterName";
+    public static final String ZOOKEEPER_URL = "flyway.zookeeper.url";
 
     // Command-line specific
     public static final String JAR_DIRS = "flyway.jarDirs";
@@ -188,6 +193,9 @@ public class ConfigUtils {
         }
         if ("FLYWAY_IGNORE_PENDING_MIGRATIONS".equals(key)) {
             return IGNORE_PENDING_MIGRATIONS;
+        }
+        if ("FLYWAY_IGNORE_MIGRATION_PATTERNS".equals(key)) {
+            return IGNORE_MIGRATION_PATTERNS;
         }
         if ("FLYWAY_INIT_SQL".equals(key)) {
             return INIT_SQL;
@@ -306,6 +314,14 @@ public class ConfigUtils {
         }
         if ("FLYWAY_ORACLE_KERBEROS_CACHE_FILE".equals(key)) {
             return ORACLE_KERBEROS_CACHE_FILE;
+        }
+
+        // Clickhouse specific
+        if ("FLYWAY_CLICKHOUSE_CLUSTER_NAME".equals(key)) {
+            return CLICKHOUSE_CLUSTER_NAME;
+        }
+        if ("FLYWAY_ZOOKEEPER_URL".equals(key)) {
+            return ZOOKEEPER_URL;
         }
 
         // Secrets-manager specific

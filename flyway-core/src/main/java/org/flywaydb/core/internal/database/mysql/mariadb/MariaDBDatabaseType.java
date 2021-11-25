@@ -1,5 +1,5 @@
 /*
- * Copyright © Red Gate Software Ltd 2010-2021
+ * Copyright (C) Red Gate Software Ltd 2010-2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package org.flywaydb.core.internal.database.mysql.mariadb;
 import org.flywaydb.core.api.ResourceProvider;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.flywaydb.core.internal.database.base.Database;
-import org.flywaydb.core.internal.database.base.DatabaseType;
+import org.flywaydb.core.internal.database.base.BaseDatabaseType;
 import org.flywaydb.core.internal.database.mysql.MySQLParser;
 import org.flywaydb.core.internal.jdbc.JdbcConnectionFactory;
 import org.flywaydb.core.internal.jdbc.StatementInterceptor;
@@ -29,10 +29,16 @@ import java.sql.Connection;
 import java.sql.Types;
 import java.util.Properties;
 
-public class MariaDBDatabaseType extends DatabaseType {
+public class MariaDBDatabaseType extends BaseDatabaseType {
     @Override
     public String getName() {
         return "MariaDB";
+    }
+
+    @Override
+    public int getPriority() {
+        // Maria needs to be checked in advance of MySql
+        return 1;
     }
 
     @Override
@@ -42,7 +48,7 @@ public class MariaDBDatabaseType extends DatabaseType {
 
     @Override
     public boolean handlesJDBCUrl(String url) {
-        if (url.startsWith("jdbc-secretsmanager:mariadb:") ) {
+        if (url.startsWith("jdbc-secretsmanager:mariadb:")) {
 
 
 
@@ -82,7 +88,7 @@ public class MariaDBDatabaseType extends DatabaseType {
 
     @Override
     public Parser createParser(Configuration configuration, ResourceProvider resourceProvider, ParsingContext parsingContext) {
-        return new MySQLParser(configuration, parsingContext);
+        return new MariaDBParser(configuration, parsingContext);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright © Red Gate Software Ltd 2010-2021
+ * Copyright (C) Red Gate Software Ltd 2010-2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,42 +15,48 @@
  */
 package org.flywaydb.core.internal.database;
 
-import org.flywaydb.core.api.logging.Log;
-import org.flywaydb.core.api.logging.LogFactory;
+import lombok.CustomLog;
 import org.flywaydb.core.internal.jdbc.JdbcTemplate;
 import org.flywaydb.core.internal.jdbc.Results;
 
 import java.math.BigInteger;
 import java.sql.SQLException;
-import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
+@CustomLog
 public class InsertRowLock {
-    private static final Log LOG = LogFactory.getLog(InsertRowLock.class);
     private static final Random random = new Random();
+    private static final int NUM_THREADS = 2;
 
     /**
      * A random string used as an ID for this instance of Flyway.
      */
     private final String tableLockString = getNextRandomString();
     private final JdbcTemplate jdbcTemplate;
-    public final int lockTimeoutMins;
-    private Timer timer;
+    private final int lockTimeoutMins;
+    private final ScheduledExecutorService executor;
+    private ScheduledFuture<?> scheduledFuture;
 
     public InsertRowLock(JdbcTemplate jdbcTemplate, int lockTimeoutMins) {
         this.jdbcTemplate = jdbcTemplate;
         this.lockTimeoutMins = lockTimeoutMins;
+        this.executor = createScheduledExecutor();
     }
 
     public void doLock(String insertStatementTemplate, String updateLockStatement, String deleteExpiredLockStatement, String booleanTrue) throws SQLException {
         int retryCount = 0;
         while (true) {
             try {
-                jdbcTemplate.execute(deleteExpiredLockStatement);
+                jdbcTemplate.execute(generateDeleteExpiredLockStatement(deleteExpiredLockStatement));
                 if (insertLockingRow(insertStatementTemplate, booleanTrue)) {
-                    startLockWatchingThread(String.format(updateLockStatement.replace("?", "%s"), tableLockString));
+                    scheduledFuture = startLockWatchingThread(String.format(updateLockStatement.replace("?", "%s"), tableLockString));
                     return;
                 }
                 if (retryCount < 50) {
@@ -58,7 +64,7 @@ public class InsertRowLock {
                     LOG.debug("Waiting for lock on Flyway schema history table");
                 } else {
                     LOG.error("Waiting for lock on Flyway schema history table. Application may be deadlocked. Lock row may require manual removal " +
-                            "from the schema history table.");
+                                      "from the schema history table.");
                 }
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
@@ -67,18 +73,24 @@ public class InsertRowLock {
         }
     }
 
+    private String generateDeleteExpiredLockStatement(String deleteExpiredLockStatementTemplate) {
+        LocalDateTime zonedDateTime = LocalDateTime.now(ZoneOffset.UTC).minusMinutes(lockTimeoutMins);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+        return String.format(deleteExpiredLockStatementTemplate.replace("?", "%s"), zonedDateTime.format(formatter));
+    }
+
     private boolean insertLockingRow(String insertStatementTemplate, String booleanTrue) {
         String insertStatement = String.format(insertStatementTemplate.replace("?", "%s"),
-                -100,
-                "'" + tableLockString + "'",
-                "'flyway-lock'",
-                "''",
-                "''",
-                0,
-                "''",
-                0,
-                booleanTrue
-        );
+                                               -100,
+                                               "'" + tableLockString + "'",
+                                               "'flyway-lock'",
+                                               "''",
+                                               "''",
+                                               0,
+                                               "''",
+                                               0,
+                                               booleanTrue
+                                              );
 
         // Insert the locking row - the primary key-ness of 'installed_rank' will prevent us having two
         Results results = jdbcTemplate.executeStatement(insertStatement);
@@ -93,23 +105,27 @@ public class InsertRowLock {
         jdbcTemplate.execute(deleteLockStatement);
     }
 
-    private String getNextRandomString(){
+    private String getNextRandomString() {
         return new BigInteger(128, random).toString(16);
     }
 
-    private void startLockWatchingThread(String updateLockStatement) {
-        TimerTask lockWatcherTask = new TimerTask() {
-            @Override
-            public void run() {
-                LOG.debug("Updating lock in Flyway schema history table");
-                jdbcTemplate.executeStatement(updateLockStatement);
-            }
+    private ScheduledExecutorService createScheduledExecutor() {
+        return Executors.newScheduledThreadPool(NUM_THREADS, r -> {
+            Thread t = Executors.defaultThreadFactory().newThread(r);
+            t.setDaemon(true);
+            return t;
+        });
+    }
+
+    private ScheduledFuture<?> startLockWatchingThread(String updateLockStatement) {
+        Runnable lockUpdatingTask = () -> {
+            LOG.debug("Updating lock in Flyway schema history table");
+            jdbcTemplate.executeStatement(updateLockStatement);
         };
-        timer = new Timer();
-        timer.schedule(lockWatcherTask, 0, Duration.ofMinutes(lockTimeoutMins / 2).toMillis());
+        return executor.scheduleAtFixedRate(lockUpdatingTask, 0, lockTimeoutMins / 2, TimeUnit.MINUTES);
     }
 
     private void stopLockWatchingThread() {
-        timer.cancel();
+        scheduledFuture.cancel(true);
     }
 }

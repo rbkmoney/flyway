@@ -1,5 +1,5 @@
 /*
- * Copyright © Red Gate Software Ltd 2010-2021
+ * Copyright (C) Red Gate Software Ltd 2010-2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,9 @@
  */
 package org.flywaydb.core.internal.jdbc;
 
+import org.flywaydb.core.internal.database.DatabaseType;
 import org.flywaydb.core.internal.database.DatabaseTypeRegister;
 import org.flywaydb.core.internal.database.base.Database;
-import org.flywaydb.core.internal.database.base.DatabaseType;
 import org.flywaydb.core.internal.database.base.Table;
 
 import java.sql.Connection;
@@ -51,7 +51,7 @@ public class ExecutionTemplateFactory {
     /**
      * Creates a new execution template for this connection, which attempts to get exclusive access to the table
      *
-     * @param connection          The connection for execution.
+     * @param connection The connection for execution.
      * @param database The database
      */
     public static ExecutionTemplate createTableExclusiveExecutionTemplate(Connection connection, Table table, Database database) {
@@ -65,7 +65,7 @@ public class ExecutionTemplateFactory {
     /**
      * Creates a new transactional execution template for this connection.
      *
-     * @param connection          The connection for execution.
+     * @param connection The connection for execution.
      * @param rollbackOnException Whether to attempt to roll back when an exception is thrown.
      */
     private static ExecutionTemplate createTransactionalExecutionTemplate(Connection connection, boolean rollbackOnException, DatabaseType databaseType) {

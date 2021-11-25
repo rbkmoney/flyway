@@ -1,6 +1,6 @@
 <!--
 
-    Copyright © Red Gate Software Ltd 2010-2021
+    Copyright (C) Red Gate Software Ltd 2010-2021
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -63,9 +63,20 @@
 
     <modules>
         <module>flyway-core</module>
+        <module>flyway-community-db-support</module>
         <module>flyway-gradle-plugin</module>
         <module>flyway-maven-plugin</module>
         <module>flyway-commandline</module>
+        <module>flyway-gcp-bigquery</module>
+        <module>flyway-gcp-spanner</module>
+        <module>flyway-sqlserver</module>
+
+
+
+
+
+
+
 
 
 
@@ -159,51 +170,56 @@
     </pluginRepositories>
 
     <properties>
-        <version.android>4.1.1.4</version.android>
         <version.ant>1.9.14</version.ant>
-        <version.aws-java-sdk>2.15.24</version.aws-java-sdk>
+        <version.aws-java-sdk>2.17.53</version.aws-java-sdk>
         <version.aws-secretsmanager>1.0.6</version.aws-secretsmanager>
+        <version.clickhouse-jdbc>0.3.0</version.clickhouse-jdbc>
         <version.commonslogging>1.2</version.commonslogging>
         <version.db2>11.5.0.0</version.db2>
         <version.derby>10.15.2.0</version.derby>
         <version.equinox>3.15.200</version.equinox>
         <version.equinoxcommon>3.10.600</version.equinoxcommon>
-        <version.gcs>1.113.2</version.gcs>
+        <version.gcs>1.113.13</version.gcs>
         <version.gradle>6.1.1</version.gradle>
-        <version.gson>2.8.6</version.gson>
+        <version.gson>2.8.9</version.gson>
         <version.h2>1.4.200</version.h2>
-        <version.hsqldb>2.5.0</version.hsqldb>
-        <version.httpclient>4.5.2</version.httpclient>
+        <version.hsqldb>2.6.0</version.hsqldb>
+        <version.ignite>2.9.0</version.ignite>
         <version.informix>4.50.3</version.informix>
         <version.jansi>1.18</version.jansi>
         <version.jaxb>2.3.1</version.jaxb>
-        <version.jaybird>3.0.8</version.jaybird>
+        <version.jaybird>3.0.10</version.jaybird>
         <version.jboss>3.2.15.Final</version.jboss>
         <version.jna>4.5.2</version.jna>
         <version.jre>11.0.2</version.jre>
         <version.jtds>1.3.1</version.jtds>
-        <version.junit>4.13.1</version.junit>
-        <version.log4net2>2.11.2</version.log4net2>
+        <version.junit>4.13.2</version.junit>
+        <version.log4net2>2.14.1</version.log4net2>
         <version.logback>1.2.3</version.logback>
-        <version.mariadb>2.6.0</version.mariadb>
-        <version.maven>3.6.3</version.maven>
+        <version.lombok>1.18.20</version.lombok>
+        <version.lombok-maven-plugin>1.18.20.0</version.lombok-maven-plugin>
+        <version.mariadb>2.7.2</version.mariadb>
+        <version.maven>3.8.1</version.maven>
         <version.mockito>1.10.19</version.mockito>
-        <version.mssql>8.4.1</version.mssql>
+        <version.msal4j>1.10.1</version.msal4j>
+        <version.mssql>9.2.1</version.mssql>
         <version.mssql-jdbc>${version.mssql}.jre8</version.mssql-jdbc>
-        <version.mysql>8.0.20</version.mysql>
+        <version.mysql>8.0.24</version.mysql>
         <version.oracle>19.6.0.0</version.oracle>
         <version.osgi>4.3.1</version.osgi>
         <version.p6spy>3.9.1</version.p6spy>
-        <version.postgresql>42.2.14</version.postgresql>
+        <version.postgresql>42.2.19</version.postgresql>
         <version.redshift>1.2.10.1009</version.redshift>
         <version.sap>2.6.30</version.sap>
         <version.slf4j>1.7.30</version.slf4j>
-        <version.snowflake>3.12.17</version.snowflake>
-        <version.spanner>1.16.0</version.spanner>
-        <version.springjdbc>4.3.29.RELEASE</version.springjdbc>
-        <version.sqlite>3.30.1</version.sqlite>
+        <version.snowflake>3.13.1</version.snowflake>
+        <version.spanner>2.2.6</version.spanner>
+        <version.springjdbc>4.3.30.RELEASE</version.springjdbc>
+        <version.sqlite>3.34.0</version.sqlite>
         <version.sybasejconnect>7.07</version.sybasejconnect>
         <version.testcontainers>1.14.3</version.testcontainers>
+        <zookeeper.version>3.5.8</zookeeper.version>
+        <version.testcontainers>1.15.3</version.testcontainers>
     </properties>
 
     <dependencyManagement>
@@ -327,6 +343,12 @@
                 <optional>true</optional>
             </dependency>
             <dependency>
+                <groupId>org.apache.ignite</groupId>
+                <artifactId>ignite-core</artifactId>
+                <version>${version.ignite}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
                 <groupId>net.snowflake</groupId>
                 <artifactId>snowflake-jdbc</artifactId>
                 <version>${version.snowflake}</version>
@@ -347,6 +369,12 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>db2</artifactId>
+                <version>${version.testcontainers}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>clickhouse</artifactId>
                 <version>${version.testcontainers}</version>
                 <optional>true</optional>
             </dependency>
@@ -458,12 +486,6 @@
 
 
 
-
-
-
-
-
-
             <dependency>
                 <groupId>com.microsoft.sqlserver</groupId>
                 <artifactId>mssql-jdbc</artifactId>
@@ -471,15 +493,15 @@
                 <optional>true</optional>
             </dependency>
             <dependency>
+                <groupId>com.microsoft.azure</groupId>
+                <artifactId>msal4j</artifactId>
+                <version>${version.msal4j}</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
                 <version>${version.jaxb}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.android</groupId>
-                <artifactId>android</artifactId>
-                <version>${version.android}</version>
-                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
@@ -500,15 +522,28 @@
                 <optional>true</optional>
             </dependency>
             <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpclient</artifactId>
-                <version>${version.httpclient}</version>
+                <groupId>ru.yandex.clickhouse</groupId>
+                <artifactId>clickhouse-jdbc</artifactId>
+                <version>${version.clickhouse-jdbc}</version>
                 <optional>true</optional>
             </dependency>
             <dependency>
-                <groupId>com.google.android</groupId>
-                <artifactId>android-test</artifactId>
-                <version>${version.android}</version>
+                <groupId>org.apache.zookeeper</groupId>
+                <artifactId>zookeeper</artifactId>
+                <version>${zookeeper.version}</version>
+            </dependency>
+            <!-- Override transitive dependencies within SecretsManager to deal with high priority CVEs. These
+             two can be removed when SecretsManager moves on from 1.0.6 -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>2.10.5.1</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-cbor</artifactId>
+                <version>2.12.1</version>
                 <optional>true</optional>
             </dependency>
             <dependency>
@@ -579,6 +614,12 @@
                 <version>${version.jre}</version>
                 <classifier>macos-x64</classifier>
                 <type>tar.gz</type>
+            </dependency>
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${version.lombok}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -663,11 +704,6 @@
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>1.12</version>
                 </plugin>
-                <plugin>
-                    <groupId>com.jayway.maven.plugins.android.generation2</groupId>
-                    <artifactId>android-maven-plugin</artifactId>
-                    <version>3.8.2</version>
-                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
@@ -678,6 +714,13 @@
                     <source>1.8</source>
                     <target>1.8</target>
                     <encoding>UTF-8</encoding>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${version.lombok}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
             <plugin>
@@ -731,6 +774,7 @@
                     <excludes>
                         <exclude>LICENSE</exclude>
                         <exclude>**/build/**</exclude>
+                        <exclude>**/src/test/**</exclude>
                         <exclude>.idea/**</exclude>
                         <exclude>**/*.sh</exclude>
                         <exclude>**/*.txt</exclude>
@@ -1378,6 +1422,49 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
             <plugin>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
@@ -1391,6 +1478,17 @@
                     <detectJavaApiLink>false</detectJavaApiLink>
                     <encoding>UTF-8</encoding>
                     <doclint>none</doclint>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
+                <version>${version.lombok-maven-plugin}</version>
+                <configuration>
+                    <encoding>UTF-8</encoding>
+                    <sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
+                    <outputDirectory>${project.basedir}/target/generated-sources/delombok</outputDirectory>
+                    <addOutputDirectory>false</addOutputDirectory>
                 </configuration>
             </plugin>
         </plugins>
@@ -1411,6 +1509,23 @@
     </reporting>
 
     <profiles>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         <profile>
             <id>release-sign-artifacts</id>
             <activation>
@@ -1422,7 +1537,22 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>delombok</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <sourcepath>${project.basedir}/target/generated-sources/delombok</sourcepath>
+                        </configuration>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>

@@ -1,5 +1,5 @@
 /*
- * Copyright © Red Gate Software Ltd 2010-2021
+ * Copyright (C) Red Gate Software Ltd 2010-2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,8 +83,8 @@ public class ResourceNameParser {
 
             String description = splitName.getRight().replace("_", " ");
             return new ResourceName(prefixResult.getLeft(), splitName.getLeft(),
-                    configuration.getSqlMigrationSeparator(), description, splitName.getRight(), suffixResult.getRight(),
-                    isValid, validationMessage);
+                                    configuration.getSqlMigrationSeparator(), description, splitName.getRight(), suffixResult.getRight(),
+                                    isValid, validationMessage);
         }
 
         // Didn't match any prefix
@@ -92,7 +92,7 @@ public class ResourceNameParser {
     }
 
     private Pair<String, ResourceType> findPrefix(String nameWithoutSuffix, List<Pair<String, ResourceType>> prefixes) {
-        for (Pair<String, ResourceType> prefix: prefixes) {
+        for (Pair<String, ResourceType> prefix : prefixes) {
             if (nameWithoutSuffix.startsWith(prefix.getLeft())) {
                 return prefix;
             }
@@ -120,7 +120,7 @@ public class ResourceNameParser {
         int separatorIndex = name.indexOf(separator);
         if (separatorIndex >= 0) {
             return Pair.of(name.substring(0, separatorIndex),
-                    name.substring(separatorIndex + separator.length()));
+                           name.substring(separatorIndex + separator.length()));
         } else {
             return Pair.of(name, "");
         }
@@ -133,20 +133,18 @@ public class ResourceNameParser {
 
 
 
+
         prefixes.add(Pair.of(configuration.getRepeatableSqlMigrationPrefix(), ResourceType.REPEATABLE_MIGRATION));
         for (Event event : Event.values()) {
             prefixes.add(Pair.of(event.getId(), ResourceType.CALLBACK));
         }
 
-        Comparator<Pair<String, ResourceType>> prefixComparator
-                = new Comparator<Pair<String, ResourceType>>() {
-            public int compare(Pair<String, ResourceType> p1, Pair<String, ResourceType> p2) {
-                // Sort most-hard-to-match first; that is, in descending order of prefix length
-                return p2.getLeft().length() - p1.getLeft().length();
-            }
+        Comparator<Pair<String, ResourceType>> prefixComparator = (p1, p2) -> {
+            // Sort most-hard-to-match first; that is, in descending order of prefix length
+            return p2.getLeft().length() - p1.getLeft().length();
         };
 
-        Collections.sort(prefixes, prefixComparator);
+        prefixes.sort(prefixComparator);
         return prefixes;
     }
 }

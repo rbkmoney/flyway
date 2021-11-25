@@ -1,5 +1,5 @@
 /*
- * Copyright © Red Gate Software Ltd 2010-2021
+ * Copyright (C) Red Gate Software Ltd 2010-2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,44 +15,37 @@
  */
 package org.flywaydb.core.internal.jdbc;
 
+import lombok.CustomLog;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import org.flywaydb.core.api.FlywayException;
-import org.flywaydb.core.api.logging.Log;
-import org.flywaydb.core.api.logging.LogFactory;
 import org.flywaydb.core.internal.database.DatabaseTypeRegister;
 import org.flywaydb.core.internal.exception.FlywaySqlException;
 import org.flywaydb.core.internal.strategy.BackoffStrategy;
 import org.flywaydb.core.internal.util.ExceptionUtils;
+import org.flywaydb.core.internal.util.FlywayDbWebsiteLinks;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 /**
  * Utility class for dealing with jdbc connections.
  */
+@CustomLog
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class JdbcUtils {
-    private static final Log LOG = LogFactory.getLog(JdbcUtils.class);
-
-    /**
-     * Prevents instantiation.
-     */
-    private JdbcUtils() {
-        //Do nothing
-    }
 
     /**
      * Opens a new connection from this dataSource.
      *
-     * @param dataSource     The dataSource to obtain the connection from.
+     * @param dataSource The dataSource to obtain the connection from.
      * @param connectRetries The maximum number of retries when attempting to connect to the database.
+     * @param connectRetriesInterval The maximum time between retries in seconds
      * @return The new connection.
      * @throws FlywayException when the connection could not be opened.
      */
-    public static Connection openConnection(DataSource dataSource, int connectRetries) throws FlywayException {
-        BackoffStrategy backoffStrategy = new BackoffStrategy(1, 2);
+    public static Connection openConnection(DataSource dataSource, int connectRetries, int connectRetriesInterval) throws FlywayException {
+        BackoffStrategy backoffStrategy = new BackoffStrategy(1, 2, connectRetriesInterval);
         int retries = 0;
         while (true) {
             try {
@@ -60,12 +53,18 @@ public class JdbcUtils {
             } catch (SQLException e) {
                 if ("08S01".equals(e.getSQLState()) && e.getMessage().contains("This driver is not configured for integrated authentication")) {
                     throw new FlywaySqlException("Unable to obtain connection from database"
-                            + getDataSourceInfo(dataSource) + ": " + e.getMessage() + "\nTo setup integrated authentication see https://flywaydb.org/documentation/database/sqlserver#windows-authentication", e);
+                                                         + getDataSourceInfo(dataSource) + ": " + e.getMessage() + "\nTo setup integrated authentication see " +
+                                                         FlywayDbWebsiteLinks.WINDOWS_AUTH, e);
+                } else if (e.getSQLState() == null && e.getMessage().contains("MSAL4J")) {
+                    throw new FlywaySqlException("Unable to obtain connection from database"
+                                                         + getDataSourceInfo(dataSource) + ": " + e.getMessage() +
+                                                         "\nYou need to install some extra drivers in order for interactive authentication to work." +
+                                                         "\nFor instructions, see " + FlywayDbWebsiteLinks.AZURE_ACTIVE_DIRECTORY, e);
                 }
 
                 if (++retries > connectRetries) {
                     throw new FlywaySqlException("Unable to obtain connection from database"
-                            + getDataSourceInfo(dataSource) + ": " + e.getMessage(), e);
+                                                         + getDataSourceInfo(dataSource) + ": " + e.getMessage(), e);
                 }
                 Throwable rootCause = ExceptionUtils.getRootCause(e);
                 String msg = "Connection error: " + e.getMessage();
@@ -77,7 +76,7 @@ public class JdbcUtils {
                     Thread.sleep(backoffStrategy.next() * 1000);
                 } catch (InterruptedException e1) {
                     throw new FlywaySqlException("Unable to obtain connection from database"
-                            + getDataSourceInfo(dataSource) + ": " + e.getMessage(), e);
+                                                         + getDataSourceInfo(dataSource) + ": " + e.getMessage(), e);
                 }
             }
         }
@@ -93,8 +92,6 @@ public class JdbcUtils {
 
     /**
      * Safely closes this connection. This method never fails.
-     *
-     * @param connection The connection to close.
      */
     public static void closeConnection(Connection connection) {
         if (connection == null) {
@@ -110,8 +107,6 @@ public class JdbcUtils {
 
     /**
      * Safely closes this statement. This method never fails.
-     *
-     * @param statement The statement to close.
      */
     public static void closeStatement(Statement statement) {
         if (statement == null) {
@@ -127,8 +122,6 @@ public class JdbcUtils {
 
     /**
      * Safely closes this resultSet. This method never fails.
-     *
-     * @param resultSet The resultSet to close.
      */
     public static void closeResultSet(ResultSet resultSet) {
         if (resultSet == null) {
@@ -142,12 +135,6 @@ public class JdbcUtils {
         }
     }
 
-    /**
-     * Retrieves the database metadata for this connection.
-     *
-     * @param connection The connection to use to query the database.
-     * @return The database metadata.
-     */
     public static DatabaseMetaData getDatabaseMetaData(Connection connection) {
         DatabaseMetaData databaseMetaData;
         try {
@@ -162,10 +149,7 @@ public class JdbcUtils {
     }
 
     /**
-     * Retrieves the name of the database product.
-     *
-     * @param databaseMetaData The connection metadata to use to query the database.
-     * @return The name of the database product. Ex.: Oracle, MySQL, ...
+     * @return The name of the database product. Example: Oracle, MySQL, ...
      */
     public static String getDatabaseProductName(DatabaseMetaData databaseMetaData) {
         try {
@@ -184,30 +168,13 @@ public class JdbcUtils {
     }
 
     /**
-     * Retrieves the version of the database product.
-     *
-     * @param databaseMetaData The connection metadata to use to query the database.
-     * @return The version of the database product. Ex.: MariaDB 10.3, ...
+     * @return The version of the database product. Example: MariaDB 10.3, ...
      */
     public static String getDatabaseProductVersion(DatabaseMetaData databaseMetaData) {
         try {
             return databaseMetaData.getDatabaseProductVersion();
         } catch (SQLException e) {
             throw new FlywaySqlException("Error while determining database product version", e);
-        }
-    }
-
-    /**
-     * Retrieves the name of the database driver.
-     *
-     * @param databaseMetaData The connection metadata to use to query the database.
-     * @return The name of the database driver. Ex.: MariaDB JDBC driver, ...
-     */
-    public static String getDriverName(DatabaseMetaData databaseMetaData) {
-        try {
-            return databaseMetaData.getDriverName();
-        } catch (SQLException e) {
-            throw new FlywaySqlException("Error while determining database driver name", e);
         }
     }
 }
